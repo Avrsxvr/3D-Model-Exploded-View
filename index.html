@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploded View — Interactive 3D</title>
+  <meta name="description" content="Premium interactive 3D exploded views for luxury bathroom fixtures.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --gold: #c8a96e;
+      --cyan: #00d4ff;
+      --bg: #070912;
+    }
+
+    body {
+      background: var(--bg);
+      color: #fff;
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Ambient background orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(80px);
+      opacity: 0.18;
+    }
+
+    .orb-1 {
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, var(--cyan), transparent 70%);
+      top: -15%;
+      left: -10%;
+      animation: drift1 22s ease-in-out infinite alternate;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--gold), transparent 70%);
+      bottom: -10%;
+      right: -8%;
+      animation: drift2 28s ease-in-out infinite alternate;
+    }
+
+    .orb-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #a855f7, transparent 70%);
+      top: 40%;
+      left: 30%;
+      animation: drift3 18s ease-in-out infinite alternate;
+      opacity: 0.1;
+    }
+
+    @keyframes drift1 {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(60px, 40px);
+      }
+    }
+
+    @keyframes drift2 {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(-50px, -30px);
+      }
+    }
+
+    @keyframes drift3 {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(30px, -40px);
+      }
+    }
+
+    /* Grid */
+    .grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* Hero text */
+    .hero {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 700px;
+      padding: 0 24px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      animation: fadeInDown 0.8s ease-out both;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.55) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInDown 0.8s ease-out 0.1s both;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+      margin-bottom: 52px;
+      animation: fadeInDown 0.8s ease-out 0.2s both;
+    }
+
+    /* Product cards */
+    .cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.9s ease-out 0.35s both;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-decoration: none;
+      padding: 28px 32px 24px;
+      width: 220px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: var(--card-glow);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-color);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px var(--card-shadow);
+    }
+
+    .card-faucet {
+      --card-color: rgba(0, 212, 255, 0.4);
+      --card-glow: radial-gradient(ellipse at 50% 0%, rgba(0, 212, 255, 0.06) 0%, transparent 60%);
+      --card-shadow: rgba(0, 212, 255, 0.15);
+    }
+
+    .card-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+      transition: transform 0.4s ease;
+    }
+
+    .card:hover .card-icon {
+      transform: scale(1.15) rotate(10deg);
+    }
+
+    .card-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.38);
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+
+    .card-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 30px;
+      border: 1px solid;
+      margin-top: auto;
+    }
+
+    .card-faucet .card-icon {
+      color: var(--cyan);
+      filter: drop-shadow(0 0 8px var(--cyan));
+    }
+
+    .card-faucet .card-tag {
+      color: var(--cyan);
+      border-color: rgba(0, 212, 255, 0.35);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .card-tag svg {
+      flex-shrink: 0;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <section class="hero">
+    <div class="badge">✦ Interactive 3D Platform</div>
+    <h1>Exploded View<br>System</h1>
+    <p class="subtitle">Explore every component of premium bathroom fixtures<br>through immersive, interactive 3D
+      exploded views.</p>
+
+    <div class="cards">
+      <!-- Faucet Card -->
+      <a href="/faucet/" class="card card-faucet">
+        <div class="card-icon">⬡</div>
+        <div class="card-name">Faucet</div>
+        <div class="card-desc">Rose gold luxury faucet with 19 annotated components.</div>
+        <span class="card-tag">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          View Now
+        </span>
+      </a>
+
+    </div>
+  </section>
+</body>
+
+</html>

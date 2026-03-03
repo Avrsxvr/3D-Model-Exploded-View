@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vanity V2 — Interactive Exploded View</title>
+    <meta name="description"
+        content="Premium interactive 3D exploded view of a luxury vanity unit. Explore every component with immersive animations." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/src/vanity.css">
+</head>
+
+<body>
+    <!-- WebGL Canvas -->
+    <canvas id="webgl-canvas" class="webgl"></canvas>
+
+    <!-- Top Header Bar -->
+    <header class="top-bar" id="top-bar">
+        <div class="top-bar-logo">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">VANITY<span class="logo-accent">V2</span></span>
+        </div>
+        <div class="top-bar-title">EXPLODED VIEW SYSTEM</div>
+        <div class="top-bar-meta">
+            <span class="meta-badge">3D Interactive</span>
+            <span class="meta-badge status-badge" id="status-badge">Loading...</span>
+        </div>
+    </header>
+
+    <!-- Left Sidebar — Parts List -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Components</span>
+            <span class="sidebar-count" id="parts-count">—</span>
+        </div>
+        <div class="parts-list" id="parts-list"></div>
+    </aside>
+
+    <!-- Bottom Control Bar -->
+    <div class="control-bar" id="control-bar">
+        <div class="control-bar-inner">
+
+            <!-- Explosion Slider -->
+            <div class="control-group" style="flex:1; max-width: 340px;">
+                <label class="control-label">Explosion Level</label>
+                <div class="slider-row">
+                    <div class="slider-track-wrap">
+                        <div class="slider-track-fill" id="slider-fill"></div>
+                        <input type="range" id="explosion-slider" class="explosion-slider" min="0" max="100" value="0"
+                            step="1" />
+                    </div>
+                    <span class="slider-value" id="slider-value-display">0%</span>
+                </div>
+            </div>
+
+            <div class="control-divider"></div>
+
+            <!-- Animation Buttons -->
+            <div class="control-group">
+                <label class="control-label">Animation</label>
+                <div class="btn-row">
+                    <button class="ctrl-btn primary" id="btn-explode">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Explode
+                    </button>
+                    <button class="ctrl-btn" id="btn-reset">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="1 4 1 10 7 10" />
+                            <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+                        </svg>
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-divider"></div>
+
+            <!-- View -->
+            <div class="control-group">
+                <label class="control-label">View</label>
+                <div class="btn-row">
+                    <button class="ctrl-btn active" id="btn-labels" title="Toggle Labels">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                            <line x1="7" y1="7" x2="7.01" y2="7" />
+                        </svg>
+                        Labels
+                    </button>
+                    <button class="ctrl-btn" id="btn-wireframe" title="Toggle Wireframe">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                        Wire
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-divider" style="margin-left:auto;"></div>
+
+            <!-- Back to Home -->
+            <a href="/" class="ctrl-btn home-link">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Home
+            </a>
+        </div>
+    </div>
+
+    <!-- SVG overlay for leader lines -->
+    <svg id="labels-svg" class="labels-svg" pointer-events="none"></svg>
+
+    <!-- Hover Tooltip -->
+    <div class="tooltip-box" id="tooltip">
+        <div class="tooltip-inner">
+            <div class="tooltip-title" id="tooltip-title">—</div>
+            <div class="tooltip-row"><span class="tooltip-key">Material</span><span class="tooltip-val"
+                    id="tooltip-material">—</span></div>
+            <div class="tooltip-row"><span class="tooltip-key">Finish</span><span class="tooltip-val"
+                    id="tooltip-finish">—</span></div>
+            <div class="tooltip-row"><span class="tooltip-key">Spec</span><span class="tooltip-val"
+                    id="tooltip-spec">—</span></div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">◈</div>
+            <div class="loading-title">VANITY V2</div>
+            <div class="loading-subtitle">Premium Exploded View</div>
+            <div class="loading-bar-wrap">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <div class="loading-text" id="loading-text">Initializing 3D Engine...</div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/vanity.js"></script>
+</body>
+
+</html>
