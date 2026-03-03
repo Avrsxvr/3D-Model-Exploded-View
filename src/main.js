@@ -44,9 +44,9 @@ const getMeta = (index) => PART_META[index % PART_META.length]
 const canvas = document.getElementById('webgl-canvas')
 const scene = new THREE.Scene()
 
-// Light grey background from image
+// Sketchfab-style light grey backdrop
 scene.background = new THREE.Color('#d2d2d2')
-scene.fog = new THREE.FogExp2(0xd2d2d2, 0.02) // subtle fog matching the bg color
+scene.fog = new THREE.FogExp2(0xd2d2d2, 0.02)
 
 /* ============================================================
    SIZES
@@ -85,7 +85,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 0.95 // Lowered to prevent blowout
+renderer.toneMappingExposure = 1.2 // Adjusted for light background
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -97,11 +97,11 @@ const pmremGenerator = new THREE.PMREMGenerator(renderer)
 scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
 
 // Ambient
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.45)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
 scene.add(ambientLight)
 
 // Key light
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.8)
 keyLight.position.set(8, 10, 8)
 keyLight.castShadow = true
 keyLight.shadow.mapSize.set(2048, 2048)
@@ -115,17 +115,17 @@ keyLight.shadow.bias = -0.001
 scene.add(keyLight)
 
 // Fill light
-const fillLight = new THREE.DirectionalLight(0xb0c4ff, 0.4) // softened blue fill
+const fillLight = new THREE.DirectionalLight(0x4488ff, 0.8)
 fillLight.position.set(-8, 2, -4)
 scene.add(fillLight)
 
 // Rim light (softened for rose gold)
-const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.2) // reduced kick
+const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.4) // reduced from 0.8
 rimLight.position.set(0, -4, -8)
 scene.add(rimLight)
 
-// Warm accent
-const warmLight = new THREE.PointLight(0xffaa66, 0.6, 30) // lowered intensity
+// Warm accent (boosted for rose gold)
+const warmLight = new THREE.PointLight(0xffaa66, 1.5, 30) // lowered from 2.5 for light bg
 warmLight.position.set(-4, 6, 4)
 scene.add(warmLight)
 
@@ -153,6 +153,8 @@ const state = {
     activePart: null,
     model: null,
     maxDim: 2,
+    isIsolated: false,
+    isolatedPartIndex: null
 }
 
 /* ============================================================
@@ -164,6 +166,9 @@ const pointer = new THREE.Vector2()
 /* ============================================================
    LOADING SCREEN
    ============================================================ */
+const contextMenu = document.getElementById('context-menu')
+const menuIsolate = document.getElementById('menu-isolate')
+const btnExitIsolation = document.getElementById('isolation-reset')
 const loadingScreen = document.getElementById('loading-screen')
 const loadingBar = document.getElementById('loading-bar')
 const loadingText = document.getElementById('loading-text')
@@ -211,7 +216,7 @@ const highlightPart = (index, on) => {
 /* ============================================================
    FOCUS ON PART (camera orbit to look at it)
    ============================================================ */
-const focusOnPart = (index) => {
+const focusOnPart = (index, isolation = false) => {
     const part = state.parts[index]
     if (!part) return
 
@@ -235,7 +240,183 @@ const focusOnPart = (index) => {
         ease: 'power2.inOut',
         onUpdate: () => controls.update()
     })
+
+    if (isolation) {
+        // Zoom in more if isolating, but not too much (relaxed from 1.5 to 2.5)
+        const fovRad = camera.fov * (Math.PI / 180)
+        const dist = (0.5 / Math.tan(fovRad / 2)) * 2.5
+        const currentPos = camera.position.clone()
+        const direction = currentPos.sub(worldPos).normalize().multiplyScalar(dist)
+        const targetCamPos = worldPos.clone().add(direction)
+
+        gsap.to(camera.position, {
+            x: targetCamPos.x,
+            y: targetCamPos.y,
+            z: targetCamPos.z,
+            duration: 1.2,
+            ease: 'power2.inOut'
+        })
+    }
 }
+
+/* ============================================================
+   ISOLATION SYSTEM
+   ============================================================ */
+const isolatePart = (index) => {
+    if (index === null) return
+    state.isIsolated = true
+    state.isolatedPartIndex = index
+
+    // Hide all other parts with a smooth animation
+    state.parts.forEach((part, i) => {
+        if (i !== index) {
+            gsap.to(part.mesh.scale, { x: 0, y: 0, z: 0, duration: 0.5, ease: 'power2.in' })
+            gsap.to(part.mesh.position, {
+                x: part.mesh.position.x * 2.5,
+                y: part.mesh.position.y * 2.5,
+                z: part.mesh.position.z * 2.5,
+                duration: 0.5,
+                ease: 'power2.in'
+            })
+        }
+    })
+
+    // Hide labels for a clean isolated view
+    gsap.to('#labels-svg', { opacity: 0, duration: 0.3 })
+    document.querySelectorAll('.leader-num, .leader-card').forEach(el => {
+        el.style.display = 'none'
+    })
+
+    // Show close isolation button
+    btnExitIsolation.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+        Close Isolation`
+    btnExitIsolation.classList.add('visible')
+
+    // Focus and zoom camera
+    focusOnPart(index, true)
+}
+
+const resetViewer = (duration = 1.2) => {
+    state.isAnimating = true
+    state.isIsolated = false
+    state.isolatedPartIndex = null
+
+    // Kill any running animations immediately to prevent "fighting"
+    gsap.killTweensOf(state)
+    if (state.model) {
+        gsap.killTweensOf(state.model.rotation)
+    }
+    gsap.killTweensOf(camera.position)
+    gsap.killTweensOf(controls.target)
+
+    const tl = gsap.timeline({
+        onComplete: () => {
+            state.isAnimating = false
+            updateLabels()
+        }
+    })
+
+    // 1. Untwist model
+    if (state.model) {
+        tl.to(state.model.rotation, { x: 0, y: 0, duration: duration, ease: 'power2.inOut' }, 0)
+    }
+
+    // 2. Explode Factor back to 0 (restores positions via setExplosionFactor)
+    tl.to(state, {
+        explosionFactor: 0,
+        duration: duration,
+        ease: 'power2.inOut',
+        onUpdate: () => setExplosionFactor(state.explosionFactor)
+    }, 0)
+
+    // 3. Restore scales for ALL parts
+    state.parts.forEach((part) => {
+        tl.to(part.mesh.scale, { x: 1, y: 1, z: 1, duration: duration, ease: 'back.out(1.0)' }, 0)
+    })
+
+    // 4. Restore Labels Visibility
+    gsap.to('#labels-svg', { opacity: 1, duration: 0.5 })
+    document.querySelectorAll('.leader-num, .leader-card').forEach(el => {
+        el.style.display = 'block'
+    })
+
+    // 5. Reset Camera Position & Target to exact load-time position
+    const targetCamPos = state._cameraDefaultPos || new THREE.Vector3(5, 3.5, 7)
+
+    tl.to(camera.position, {
+        x: targetCamPos.x,
+        y: targetCamPos.y,
+        z: targetCamPos.z,
+        duration: duration,
+        ease: 'power2.inOut',
+        onUpdate: () => controls.update()
+    }, 0)
+
+    tl.to(controls.target, {
+        x: 0, y: 0, z: 0,
+        duration: duration,
+        ease: 'power2.inOut'
+    }, 0)
+
+    // Sync UI Elements
+    btnExitIsolation.classList.remove('visible')
+    btnExplode.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3" />
+        </svg>
+        Explode`
+
+    // Reset Highlights
+    if (state.activePart !== null) {
+        highlightPart(state.activePart, false)
+        state.activePart = null
+    }
+}
+
+const exitIsolation = () => {
+    resetViewer(1.4)
+}
+
+btnExitIsolation.addEventListener('click', exitIsolation)
+
+// Context Menu Triggers
+window.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+
+    // Raycast to find which part was right-clicked
+    raycaster.setFromCamera(pointer, camera)
+    const activeMeshes = state.parts.map(p => p.mesh)
+    const intersects = raycaster.intersectObjects(activeMeshes)
+
+    if (intersects.length > 0) {
+        const mesh = intersects[0].object
+        const partIndex = state.parts.findIndex(p => p.mesh === mesh)
+
+        if (partIndex !== -1) {
+            state._contextPartIndex = partIndex
+
+            // Show and position context menu
+            contextMenu.style.left = e.clientX + 'px'
+            contextMenu.style.top = e.clientY + 'px'
+            contextMenu.classList.add('visible')
+        }
+    }
+})
+
+// Hide context menu on click elsewhere
+window.addEventListener('mousedown', (e) => {
+    if (!contextMenu.contains(e.target)) {
+        contextMenu.classList.remove('visible')
+    }
+})
+
+menuIsolate.addEventListener('click', () => {
+    isolatePart(state._contextPartIndex)
+    contextMenu.classList.remove('visible')
+})
 
 /* ============================================================
    EXPLOSION CONTROL
@@ -337,37 +518,7 @@ btnExplode.addEventListener('click', () => {
    ============================================================ */
 const btnReset = document.getElementById('btn-reset')
 btnReset.addEventListener('click', () => {
-    gsap.killTweensOf(state)
-    if (state.model) {
-        gsap.killTweensOf(state.model.rotation)
-        gsap.to(state.model.rotation, { x: 0, y: 0, duration: 1.4, ease: 'power2.out' })
-    }
-    gsap.to(state, {
-        explosionFactor: 0,
-        duration: 1.4,
-        ease: 'power2.out',
-        onUpdate: () => setExplosionFactor(state.explosionFactor),
-        onComplete: () => {
-            state.isAnimating = false
-            btnExplode.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Explode`
-        }
-    })
-    // Reset camera
-    gsap.to(camera.position, {
-        x: state._cameraDefaultPos?.x ?? 5,
-        y: state._cameraDefaultPos?.y ?? 3.5,
-        z: state._cameraDefaultPos?.z ?? 7,
-        duration: 1.4,
-        ease: 'power2.out',
-    })
-    // Reset active part
-    if (state.activePart !== null) {
-        highlightPart(state.activePart, false)
-        document.getElementById(`part-item-${state.activePart}`)?.classList.remove('active')
-        state.activePart = null
-    }
+    resetViewer(1.4)
 })
 
 
@@ -603,6 +754,7 @@ const createInfoButtons = () => {
    explosion animations AND camera orbits.
    ───────────────────────────────────────────────────────────── */
 const updateLabels = () => {
+    if (state.isIsolated) return
     const factor = state.explosionFactor
     const show = state.labelsVisible && factor > 0.02
     const alpha = clamp((factor - 0.02) / 0.35, 0, 1)
@@ -677,14 +829,14 @@ const updateLabels = () => {
    PREMIUM ROSE GOLD MATERIAL
    ============================================================ */
 const buildMaterial = (index, total) => {
-    // Premium Rose Gold Settings
+    // Premium Rose Gold Settings — light but highly polished
     return new THREE.MeshPhysicalMaterial({
-        color: '#daafa4',            // Richer rose gold
-        metalness: 1.0,
-        roughness: 0.15,             // Slightly rougher to keep highlights centered
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.1,
-        envMapIntensity: 0.8,        // Lowered to stop reflecting so much of the bright background
+        color: '#d1a39a',            // Soft, premium light rose gold
+        metalness: 1.0,              // Fully metallic
+        roughness: 0.12,             // Extremely smooth & polished
+        clearcoat: 0.6,              // Enhanced shiny gloss layer
+        clearcoatRoughness: 0.08,    // Extremely crisp clearcoat reflection
+        envMapIntensity: 2.2,        // Bright, luxurious room reflections
     })
 }
 
@@ -718,7 +870,8 @@ gltfLoader.load(
         // --- Camera fit ---
         const maxDim = Math.max(size.x, size.y, size.z)
         const fovRad = camera.fov * (Math.PI / 180)
-        const dist = (maxDim / 2 / Math.tan(fovRad / 2)) * 2.8
+        // Adjusting to 2.2 for a perfect framed view that is clear but not too tight
+        const dist = (state.maxDim / 2 / Math.tan(fovRad / 2)) * 2.2
         camera.position.set(dist * 0.7, dist * 0.5, dist)
         camera.lookAt(0, 0, 0)
         controls.target.set(0, 0, 0)
@@ -773,7 +926,6 @@ gltfLoader.load(
         setTimeout(() => {
             hideLoadingScreen()
             state.modelLoaded = true
-            // Stays at 0% — explosion only starts on manual user interaction
         }, 400)
     },
     (progress) => {
