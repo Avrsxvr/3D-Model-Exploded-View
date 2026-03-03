@@ -11,16 +11,16 @@
 }
 
 :root {
-    --bg-deep: #1b1b1b;
-    --bg-panel: rgba(27, 27, 27, 0.92);
-    --bg-panel-hover: rgba(45, 45, 45, 0.98);
-    --accent: #00d4ff;
-    --accent-glow: rgba(0, 212, 255, 0.25);
+    --bg-deep: #d2d2d2;
+    --bg-panel: rgba(15, 20, 30, 0.9);
+    --bg-panel-hover: rgba(30, 35, 45, 0.95);
+    --accent: #0077cc;
+    --accent-glow: rgba(0, 119, 204, 0.15);
     --accent-secondary: #ff6b35;
-    --text-primary: #e8ecf1;
-    --text-secondary: #7a8898;
-    --text-muted: #4a5568;
-    --border: rgba(255, 255, 255, 0.07);
+    --text-primary: #1a1e23;
+    --text-secondary: #555e6a;
+    --text-muted: #8892a0;
+    --border: rgba(0, 0, 0, 0.08);
     --border-accent: rgba(0, 212, 255, 0.3);
     --glass: rgba(255, 255, 255, 0.04);
     --sidebar-w: 220px;
@@ -200,7 +200,7 @@ body {
 }
 
 .logo-text {
-    color: var(--text-primary);
+    color: #fff;
 }
 
 .logo-accent {
@@ -212,7 +212,7 @@ body {
     font-family: var(--font-main);
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
     letter-spacing: 3px;
     text-transform: uppercase;
 }
@@ -351,7 +351,8 @@ body {
 }
 
 .part-item.active .part-name {
-    color: var(--accent);
+    color: #fff;
+    font-weight: 600;
 }
 
 .part-index {
@@ -384,7 +385,7 @@ body {
 .part-name {
     font-size: 11.5px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -44,9 +44,9 @@ const getMeta = (index) => PART_META[index % PART_META.length]
 const canvas = document.getElementById('webgl-canvas')
 const scene = new THREE.Scene()
 
-// Sketchfab-inspired grey backdrop
-scene.background = new THREE.Color('#1b1b1b')
-scene.fog = new THREE.FogExp2(0x1b1b1b, 0.04)
+// Light grey background from image
+scene.background = new THREE.Color('#d2d2d2')
+scene.fog = new THREE.FogExp2(0xd2d2d2, 0.02) // subtle fog matching the bg color
 
 /* ============================================================
    SIZES
@@ -85,7 +85,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.8
+renderer.toneMappingExposure = 0.95 // Lowered to prevent blowout
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -97,11 +97,11 @@ const pmremGenerator = new THREE.PMREMGenerator(renderer)
 scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
 
 // Ambient
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.45)
 scene.add(ambientLight)
 
 // Key light
-const keyLight = new THREE.DirectionalLight(0xffffff, 3)
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
 keyLight.position.set(8, 10, 8)
 keyLight.castShadow = true
 keyLight.shadow.mapSize.set(2048, 2048)
@@ -115,17 +115,17 @@ keyLight.shadow.bias = -0.001
 scene.add(keyLight)
 
 // Fill light
-const fillLight = new THREE.DirectionalLight(0x4488ff, 1.2)
+const fillLight = new THREE.DirectionalLight(0xb0c4ff, 0.4) // softened blue fill
 fillLight.position.set(-8, 2, -4)
 scene.add(fillLight)
 
 // Rim light (softened for rose gold)
-const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.4) // reduced from 0.8
+const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.2) // reduced kick
 rimLight.position.set(0, -4, -8)
 scene.add(rimLight)
 
-// Warm accent (boosted for rose gold)
-const warmLight = new THREE.PointLight(0xffaa66, 2.5, 30) // shifted to peach/copper and intensified
+// Warm accent
+const warmLight = new THREE.PointLight(0xffaa66, 0.6, 30) // lowered intensity
 warmLight.position.set(-4, 6, 4)
 scene.add(warmLight)
 
@@ -677,14 +677,14 @@ const updateLabels = () => {
    PREMIUM ROSE GOLD MATERIAL
    ============================================================ */
 const buildMaterial = (index, total) => {
-    // Premium Rose Gold Settings — light but highly polished
+    // Premium Rose Gold Settings
     return new THREE.MeshPhysicalMaterial({
-        color: '#d1a39a',            // Soft, premium light rose gold
-        metalness: 1.0,              // Fully metallic
-        roughness: 0.12,             // Extremely smooth & polished
-        clearcoat: 0.6,              // Enhanced shiny gloss layer
-        clearcoatRoughness: 0.08,    // Extremely crisp clearcoat reflection
-        envMapIntensity: 2.2,        // Bright, luxurious room reflections
+        color: '#daafa4',            // Richer rose gold
+        metalness: 1.0,
+        roughness: 0.15,             // Slightly rougher to keep highlights centered
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.1,
+        envMapIntensity: 0.8,        // Lowered to stop reflecting so much of the bright background
     })
 }
 
