@@ -216,7 +216,7 @@ const highlightPart = (index, on) => {
 /* ============================================================
    FOCUS ON PART (camera orbit to look at it)
    ============================================================ */
-const focusOnPart = (index, isolation = false) => {
+const focusOnPart = (index) => {
     const part = state.parts[index]
     if (!part) return
 
@@ -241,22 +241,20 @@ const focusOnPart = (index, isolation = false) => {
         onUpdate: () => controls.update()
     })
 
-    if (isolation) {
-        // Zoom in more if isolating, but not too much (relaxed from 1.5 to 2.5)
-        const fovRad = camera.fov * (Math.PI / 180)
-        const dist = (0.5 / Math.tan(fovRad / 2)) * 2.5
-        const currentPos = camera.position.clone()
-        const direction = currentPos.sub(worldPos).normalize().multiplyScalar(dist)
-        const targetCamPos = worldPos.clone().add(direction)
+    // Zoom in on the part
+    const fovRad = camera.fov * (Math.PI / 180)
+    const dist = (0.5 / Math.tan(fovRad / 2)) * 2.5
+    const currentPos = camera.position.clone()
+    const direction = currentPos.sub(worldPos).normalize().multiplyScalar(dist)
+    const targetCamPos = worldPos.clone().add(direction)
 
-        gsap.to(camera.position, {
-            x: targetCamPos.x,
-            y: targetCamPos.y,
-            z: targetCamPos.z,
-            duration: 1.2,
-            ease: 'power2.inOut'
-        })
-    }
+    gsap.to(camera.position, {
+        x: targetCamPos.x,
+        y: targetCamPos.y,
+        z: targetCamPos.z,
+        duration: 1.2,
+        ease: 'power2.inOut'
+    })
 }
 
 /* ============================================================
@@ -267,116 +265,35 @@ const isolatePart = (index) => {
     state.isIsolated = true
     state.isolatedPartIndex = index
 
-    // Hide all other parts with a smooth animation
+    // Hide all other parts
     state.parts.forEach((part, i) => {
         if (i !== index) {
-            gsap.to(part.mesh.scale, { x: 0, y: 0, z: 0, duration: 0.5, ease: 'power2.in' })
-            gsap.to(part.mesh.position, {
-                x: part.mesh.position.x * 2.5,
-                y: part.mesh.position.y * 2.5,
-                z: part.mesh.position.z * 2.5,
-                duration: 0.5,
-                ease: 'power2.in'
-            })
+            part.mesh.visible = false
+        } else {
+            part.mesh.visible = true
         }
     })
 
-    // Hide labels for a clean isolated view
+    // Hide labels
     gsap.to('#labels-svg', { opacity: 0, duration: 0.3 })
     document.querySelectorAll('.leader-num, .leader-card').forEach(el => {
         el.style.display = 'none'
     })
 
     // Show close isolation button
-    btnExitIsolation.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-        Close Isolation`
     btnExitIsolation.classList.add('visible')
 
-    // Focus and zoom camera
-    focusOnPart(index, true)
-}
-
-const resetViewer = (duration = 1.2) => {
-    state.isAnimating = true
-    state.isIsolated = false
-    state.isolatedPartIndex = null
-
-    // Kill any running animations immediately to prevent "fighting"
-    gsap.killTweensOf(state)
-    if (state.model) {
-        gsap.killTweensOf(state.model.rotation)
-    }
-    gsap.killTweensOf(camera.position)
-    gsap.killTweensOf(controls.target)
-
-    const tl = gsap.timeline({
-        onComplete: () => {
-            state.isAnimating = false
-            updateLabels()
-        }
-    })
-
-    // 1. Untwist model
-    if (state.model) {
-        tl.to(state.model.rotation, { x: 0, y: 0, duration: duration, ease: 'power2.inOut' }, 0)
-    }
-
-    // 2. Explode Factor back to 0 (restores positions via setExplosionFactor)
-    tl.to(state, {
-        explosionFactor: 0,
-        duration: duration,
-        ease: 'power2.inOut',
-        onUpdate: () => setExplosionFactor(state.explosionFactor)
-    }, 0)
-
-    // 3. Restore scales for ALL parts
-    state.parts.forEach((part) => {
-        tl.to(part.mesh.scale, { x: 1, y: 1, z: 1, duration: duration, ease: 'back.out(1.0)' }, 0)
-    })
-
-    // 4. Restore Labels Visibility
-    gsap.to('#labels-svg', { opacity: 1, duration: 0.5 })
-    document.querySelectorAll('.leader-num, .leader-card').forEach(el => {
-        el.style.display = 'block'
-    })
-
-    // 5. Reset Camera Position & Target to exact load-time position
-    const targetCamPos = state._cameraDefaultPos || new THREE.Vector3(5, 3.5, 7)
-
-    tl.to(camera.position, {
-        x: targetCamPos.x,
-        y: targetCamPos.y,
-        z: targetCamPos.z,
-        duration: duration,
-        ease: 'power2.inOut',
-        onUpdate: () => controls.update()
-    }, 0)
-
-    tl.to(controls.target, {
-        x: 0, y: 0, z: 0,
-        duration: duration,
-        ease: 'power2.inOut'
-    }, 0)
-
-    // Sync UI Elements
-    btnExitIsolation.classList.remove('visible')
-    btnExplode.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-        Explode`
-
-    // Reset Highlights
-    if (state.activePart !== null) {
-        highlightPart(state.activePart, false)
-        state.activePart = null
-    }
+    // Focus camera
+    focusOnPart(index)
 }
 
 const exitIsolation = () => {
+    // Show all parts again
+    state.parts.forEach(part => {
+        part.mesh.visible = true
+    })
+
+    // Perform full reset to hero view
     resetViewer(1.4)
 }
 
@@ -425,21 +342,105 @@ const sliderEl = document.getElementById('explosion-slider')
 const sliderFill = document.getElementById('slider-fill')
 const sliderDisplay = document.getElementById('slider-value-display')
 
+const updateExplosionSlider = (value) => {
+    const pct = value * 100
+    sliderEl.value = pct
+    sliderFill.style.width = pct + '%'
+    sliderDisplay.textContent = Math.round(pct) + '%'
+    updateLabels()
+}
+
 const setExplosionFactor = (value) => {
     state.explosionFactor = value
     state.parts.forEach(part => {
         const offset = part.direction.clone().multiplyScalar(value)
         part.mesh.position.copy(part.initialPos).add(offset)
     })
-    // Update slider UI (max factor = 1)
-    const pct = value * 100
-    sliderEl.value = pct
-    sliderFill.style.width = pct + '%'
-    sliderDisplay.textContent = Math.round(pct) + '%'
-
-    // Show/hide labels based on explosion level
-    updateLabels()
+    updateExplosionSlider(value)
 }
+
+const resetViewer = (duration = 1.2) => {
+    state.isAnimating = true
+    state.isIsolated = false
+
+    // Restore mesh visibility in case we were isolated
+    state.parts.forEach(part => {
+        part.mesh.visible = true
+    })
+
+    // Kill any running animations immediately to prevent "fighting"
+    gsap.killTweensOf(state)
+    if (state.model) {
+        gsap.killTweensOf(state.model.rotation)
+    }
+    gsap.killTweensOf(camera.position)
+    gsap.killTweensOf(controls.target)
+
+    // Explicitly kill tweens on all part meshes
+    state.parts.forEach(p => {
+        gsap.killTweensOf(p.mesh.position)
+        gsap.killTweensOf(p.mesh.scale)
+    })
+
+    const tl = gsap.timeline({
+        onComplete: () => {
+            state.isAnimating = false
+            updateLabels()
+        }
+    })
+
+    // 1. Untwist model
+    if (state.model) {
+        tl.to(state.model.rotation, { x: 0, y: 0, duration: duration, ease: 'power2.inOut' }, 0)
+    }
+
+    // 2. Animate explosion factor back to 0
+    tl.to(state, {
+        explosionFactor: 0,
+        duration: duration,
+        ease: 'power2.inOut',
+        onUpdate: () => setExplosionFactor(state.explosionFactor)
+    }, 0)
+
+    // 4. Restore Labels Visibility
+    gsap.to('#labels-svg', { opacity: 1, duration: 0.5 })
+    document.querySelectorAll('.leader-num, .leader-card').forEach(el => {
+        el.style.display = 'block'
+    })
+
+    // 5. Reset Camera Position & Target to exact load-time position
+    const targetCamPos = state._cameraDefaultPos || new THREE.Vector3(5, 3.5, 7)
+
+    tl.to(camera.position, {
+        x: targetCamPos.x,
+        y: targetCamPos.y,
+        z: targetCamPos.z,
+        duration: duration,
+        ease: 'power2.inOut',
+        onUpdate: () => controls.update()
+    }, 0)
+
+    tl.to(controls.target, {
+        x: 0, y: 0, z: 0,
+        duration: duration,
+        ease: 'power2.inOut'
+    }, 0)
+
+    // Sync UI Elements
+    btnExitIsolation.classList.remove('visible')
+    btnExplode.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3" />
+        </svg>
+        Explode`
+
+    // Reset Highlights
+    if (state.activePart !== null) {
+        highlightPart(state.activePart, false)
+        state.activePart = null
+    }
+}
+
 
 sliderEl.addEventListener('input', (e) => {
     const val = parseFloat(e.target.value) / 100  // 0–1 range
@@ -870,8 +871,8 @@ gltfLoader.load(
         // --- Camera fit ---
         const maxDim = Math.max(size.x, size.y, size.z)
         const fovRad = camera.fov * (Math.PI / 180)
-        // Adjusting to 2.2 for a perfect framed view that is clear but not too tight
-        const dist = (state.maxDim / 2 / Math.tan(fovRad / 2)) * 2.2
+        // Resetting to 2.4 for a perfectly framed "hero" view matching the requested screenshot
+        const dist = (state.maxDim / 2 / Math.tan(fovRad / 2)) * 2.4
         camera.position.set(dist * 0.7, dist * 0.5, dist)
         camera.lookAt(0, 0, 0)
         controls.target.set(0, 0, 0)

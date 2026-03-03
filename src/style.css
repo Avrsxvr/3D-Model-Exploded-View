@@ -544,17 +544,11 @@ body {
 }
 
 .isolation-reset svg {
-    animation: spin 3s linear infinite paused;
+    transition: transform 0.3s ease;
 }
 
 .isolation-reset:hover svg {
-    animation-play-state: running;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(-360deg);
-    }
+    transform: scale(1.1) rotate(90deg);
 }
 
 @media (max-width: 768px) {
@@ -564,6 +558,8 @@ body {
         right: 16px;
     }
 }
+
+
 
 .tooltip-title {
     font-family: var(--font-main);
