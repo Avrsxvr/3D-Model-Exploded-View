@@ -44,9 +44,9 @@ const getMeta = (index) => PART_META[index % PART_META.length]
 const canvas = document.getElementById('webgl-canvas')
 const scene = new THREE.Scene()
 
-// Premium dark backdrop
-scene.background = new THREE.Color('#060a10')
-scene.fog = new THREE.FogExp2(0x060a10, 0.04)
+// Sketchfab-inspired grey backdrop
+scene.background = new THREE.Color('#1b1b1b')
+scene.fog = new THREE.FogExp2(0x1b1b1b, 0.04)
 
 /* ============================================================
    SIZES

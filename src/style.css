@@ -11,9 +11,9 @@
 }
 
 :root {
-    --bg-deep: #080b10;
-    --bg-panel: rgba(10, 15, 22, 0.88);
-    --bg-panel-hover: rgba(22, 30, 44, 0.95);
+    --bg-deep: #1b1b1b;
+    --bg-panel: rgba(27, 27, 27, 0.92);
+    --bg-panel-hover: rgba(45, 45, 45, 0.98);
     --accent: #00d4ff;
     --accent-glow: rgba(0, 212, 255, 0.25);
     --accent-secondary: #ff6b35;
