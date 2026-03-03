@@ -23,7 +23,6 @@
     --border: rgba(0, 0, 0, 0.08);
     --border-accent: rgba(0, 119, 204, 0.25);
     --glass: rgba(0, 0, 0, 0.03);
-    --sidebar-w: 220px;
     --header-h: 56px;
     --controlbar-h: 80px;
     --font-main: 'Space Grotesk', 'Inter', sans-serif;
@@ -155,9 +154,12 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    z-index: 100;
+    z-index: 1000;
+    /* Ensure it stays above everything */
     animation: slideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
+
+/* Hamburger for mobile - REMOVED */
 
 @keyframes slideDown {
     from {
@@ -247,159 +249,7 @@ body {
     background: rgba(0, 168, 84, 0.08);
 }
 
-/* ============================================================
-   LEFT SIDEBAR
-   ============================================================ */
-.sidebar {
-    position: fixed;
-    top: var(--header-h);
-    left: 0;
-    width: var(--sidebar-w);
-    bottom: var(--controlbar-h);
-    background: var(--bg-panel);
-    backdrop-filter: blur(20px) saturate(1.5);
-    -webkit-backdrop-filter: blur(20px) saturate(1.5);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    z-index: 90;
-    animation: slideLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
-    overflow: hidden;
-}
-
-@keyframes slideLeft {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 16px 12px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.sidebar-title {
-    font-family: var(--font-main);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-}
-
-.sidebar-count {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-glow);
-    border: 1px solid var(--border-accent);
-    padding: 2px 7px;
-    border-radius: 10px;
-    min-width: 22px;
-    text-align: center;
-}
-
-.parts-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-}
-
-.parts-list::-webkit-scrollbar {
-    width: 3px;
-}
-
-.parts-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.parts-list::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
-
-.part-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition), border-color var(--transition);
-    border: 1px solid transparent;
-    margin-bottom: 2px;
-}
-
-.part-item:hover {
-    background: var(--glass);
-    border-color: var(--border);
-}
-
-.part-item.active {
-    background: var(--accent-glow);
-    border-color: var(--border-accent);
-}
-
-.part-item.active .part-name {
-    color: var(--accent);
-    font-weight: 600;
-}
-
-.part-index {
-    font-family: var(--font-main);
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-muted);
-    min-width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    flex-shrink: 0;
-}
-
-.part-item.active .part-index {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-}
-
-.part-info {
-    flex: 1;
-    overflow: hidden;
-}
-
-.part-name {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.3;
-}
-
-.part-sub {
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-top: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+/* Sidebar REMOVED */
 
 /* ============================================================
    BOTTOM CONTROL BAR
@@ -795,6 +645,92 @@ body {
         linear-gradient(rgba(0, 212, 255, 0.022) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 212, 255, 0.022) 1px, transparent 1px);
     background-size: 50px 50px;
+}
+
+/* ============================================================
+   RESPONSIVENESS (MOBILE OPTIMIZATION)
+   ============================================================ */
+@media (max-width: 768px) {
+    :root {
+        --controlbar-h: 70px;
+    }
+
+    /* Top bar adjustments */
+    .top-bar {
+        padding: 0 16px;
+    }
+
+    .top-bar-title,
+    .top-bar-meta {
+        display: none;
+        /* Hide non-critical info to save space */
+    }
+
+    /* Control bar adjustments */
+    .control-bar {
+        padding: 0 16px;
+        height: var(--controlbar-h);
+    }
+
+    .control-bar-inner {
+        gap: 16px;
+    }
+
+    .control-divider {
+        display: none;
+    }
+
+    .control-label {
+        font-size: 8px;
+        letter-spacing: 1.5px;
+    }
+
+    .slider-track-wrap {
+        min-width: 140px;
+    }
+
+    .slider-value {
+        font-size: 10px;
+        min-width: 30px;
+    }
+
+    .ctrl-btn {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+
+    .btn-text {
+        display: none;
+        /* Icon-only on very small screens if needed */
+    }
+
+    /* Overlays */
+    .leader-card {
+        width: 140px;
+        padding: 10px 12px;
+    }
+
+    .leader-card-text {
+        font-size: 12px;
+    }
+
+    .tooltip-box {
+        min-width: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slider-track-wrap {
+        min-width: 100px;
+    }
+
+    .control-bar-inner {
+        gap: 10px;
+    }
+
+    .ctrl-btn {
+        padding: 8px 10px;
+    }
 }
 
 /* ============================================================
